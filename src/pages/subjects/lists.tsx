@@ -3,7 +3,7 @@ import { Breadcrumb } from '@/components/refine-ui/layout/breadcrumb'
 import { ListView } from '@/components/refine-ui/views/list-view'
 import { Search } from 'lucide-react'
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from '@/components/ui/select'
-import { DEPARTMENTS_OPTIONS } from '@/constants'
+import { DEPARTMENT_OPTIONS } from '@/constants'
 import { CreateButton } from '@/components/refine-ui/buttons/create'
 import { useTable } from '@refinedev/react-table';
 import { Subject } from '@/types';
@@ -60,7 +60,7 @@ const SubjectsList: React.FC = () => {
             },
             {
                 id: 'department',
-                accessorKey: 'department',
+                accessorKey: 'department.name',
                 size: 150,
                 header: () => <p className='column-title ml-2'>Department</p>,
                 cell: ({ getValue }) => <Badge variant='secondary'>{getValue<string>()}</Badge>,
@@ -122,7 +122,7 @@ const SubjectsList: React.FC = () => {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Departments</SelectItem>
-                                {DEPARTMENTS_OPTIONS.map((dept) => (
+                                {DEPARTMENT_OPTIONS.map((dept) => (
                                     <SelectItem key={dept.value} value={dept.value}>
                                         {dept.label}
                                     </SelectItem>
