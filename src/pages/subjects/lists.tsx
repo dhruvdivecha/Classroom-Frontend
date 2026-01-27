@@ -118,7 +118,7 @@ const SubjectsList: React.FC = () => {
                     <div className='flex gap-2 w-full sm:w-auto'>
                         <Select value={selectedFilter ?? undefined} onValueChange={(value) => setSelectedFilter(value)}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Filter by Departement" />
+                                <SelectValue placeholder="Filter by Department" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Departments</SelectItem>
