@@ -4,6 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { UploadWidgetProps, UploadWidgetValue } from "@/types";
 
+/**
+ * Renders an upload UI backed by Cloudinary that manages an image preview, upload flow, and removal.
+ *
+ * @param value - Optional initial uploaded value containing the file URL and public ID; pass `null` for no initial image.
+ * @param onChange - Callback invoked when an image is uploaded or removed; receives the upload payload (`{ url, publicId }`) or `null` when cleared.
+ * @param disabled - When true, disables opening the upload widget and the remove action.
+ * @returns The UploadWidget React element.
+ */
 function UploadWidget({
   value = null,
   onChange,

@@ -20,6 +20,11 @@ import SubjectsCreate from "./pages/subjects/create";
 import ClassesList from "./pages/classes/lists";
 import ClassesCreate from "./pages/classes/create";
 
+/**
+ * Root application component that configures global providers, routes, and UI integrations.
+ *
+ * @returns The application's root JSX element containing router and provider wrappers, route definitions for dashboard, subjects, and classes, and global UI components such as the toaster, kbar, unsaved-changes notifier, and document title handler.
+ */
 function App() {
   return (
     <BrowserRouter>
