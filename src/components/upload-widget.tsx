@@ -82,24 +82,32 @@ function UploadWidget({
     setIsRemoving(true);
 
     try {
-      if (deleteToken) {
-        const params = new URLSearchParams();
-        params.append("token", deleteToken);
-
-        await fetch(
-          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/delete_by_token`,
-          {
-            method: "POST",
-            body: params,
-          }
-        );
+      if (!deleteToken) {
+        throw new Error("Missing delete token for Cloudinary");
       }
-    } catch (error) {
-      console.error("Failed to remove image from Cloudinary", error);
-    } finally {
+
+      const params = new URLSearchParams();
+      params.append("token", deleteToken);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/delete_by_token`,
+        {
+          method: "POST",
+          body: params,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove image from Cloudinary");
+      }
+
       setPreview(null);
       setDeleteToken(null);
       onChangeRef.current?.(null);
+    } catch (error) {
+      console.error("Failed to remove image from Cloudinary", error);
+      window.alert("Failed to remove image. Please try again.");
+    } finally {
       setIsRemoving(false);
     }
   };
@@ -122,11 +130,16 @@ function UploadWidget({
         </div>
       ) : (
         <div
-          className="upload-dropzone"
+          className={`upload-dropzone ${disabled ? "disabled" : ""}`}
           role="button"
-          tabIndex={0}
-          onClick={openWidget}
+          aria-disabled={disabled}
+          tabIndex={disabled ? -1 : 0}
+          onClick={() => {
+            if (disabled) return;
+            openWidget();
+          }}
           onKeyDown={(event) => {
+            if (disabled) return;
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
               openWidget();

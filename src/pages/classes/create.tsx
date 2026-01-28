@@ -53,6 +53,7 @@ const ClassesCreate = () => {
     const bannerPublicId = form.watch("bannerCldPubId");
 
     const onSubmit = async (values: z.infer<typeof classSchema>) => {
+        if (isSubmitting) return;
         try {
             await onFinish(values);
         } catch (error) {
@@ -318,7 +319,7 @@ const ClassesCreate = () => {
 
                                 <Separator />
 
-                                <Button type="submit" size="lg" className="w-full">
+                                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting} aria-disabled={isSubmitting}>
                                     {isSubmitting ? (
                                         <div className="flex gap-1">
                                             <span>Creating Class...</span>
