@@ -1,7 +1,39 @@
 import { ListResponse } from '@/types';
 import { createDataProvider ,CreateDataProviderOptions } from '@refinedev/rest';
-import { BACKEND_BASE_URL } from '@/constants'; 
+import { BACKEND_BASE_URL } from '@/constants';
+import { toast } from 'sonner';
 
+if(!BACKEND_BASE_URL){
+  throw new Error("BACKEND_BASE_URL is not defined. Please set it in the environment variables.");
+}
+
+type HttpError = Error & { statusCode: number };
+
+const buildhttpError = async (response: Response): Promise<HttpError> => {
+  let message = 'Request failed';
+
+  try {
+    const payload = (await response.json()) as { message?: string };
+
+    if (payload.message) {
+      message = payload.message;
+    }
+  } catch  {
+    // Ignore JSON parsing errors
+  }
+
+  if (response.status === 429) {
+    toast.error('Too many requests', {
+      description: message,
+      richColors: true,
+    });
+  }
+
+  return Object.assign(new Error(message), {
+    statusCode: response.status,
+  });
+
+}
 const options: CreateDataProviderOptions = {
   getList: {
     getEndpoint: (params) => params.resource,
@@ -28,6 +60,9 @@ const options: CreateDataProviderOptions = {
     },
 
     mapResponse: async (response) => {
+      if (!response.ok) {
+        throw await buildhttpError(response);
+      }
       const payload: ListResponse = await response.clone().json();
       return payload.data || [];
     },
