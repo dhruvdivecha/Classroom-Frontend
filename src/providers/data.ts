@@ -1,7 +1,6 @@
 import { ListResponse } from '@/types';
 import { createDataProvider ,CreateDataProviderOptions } from '@refinedev/rest';
 import { BACKEND_BASE_URL } from '@/constants';
-import { toast } from 'sonner';
 
 if(!BACKEND_BASE_URL){
   throw new Error("BACKEND_BASE_URL is not defined. Please set it in the environment variables.");
@@ -22,12 +21,6 @@ const buildhttpError = async (response: Response): Promise<HttpError> => {
     // Ignore JSON parsing errors
   }
 
-  if (response.status === 429) {
-    toast.error('Too many requests', {
-      description: message,
-      richColors: true,
-    });
-  }
 
   return Object.assign(new Error(message), {
     statusCode: response.status,
