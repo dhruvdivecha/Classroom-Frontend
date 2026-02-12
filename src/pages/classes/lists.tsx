@@ -10,6 +10,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/refine-ui/data-table/data-table'
 import { useList } from '@refinedev/core'
+import { ShowButton } from '@/components/refine-ui/buttons/show'
 
 const ClassesList: React.FC = () => {
 	const [searchTerm, setSearchTerm] = React.useState('')
@@ -145,6 +146,12 @@ const ClassesList: React.FC = () => {
                 size: 100,
                 header: () => <p className='column-title ml-2'>Capacity</p>,
                 cell: ({ getValue }) => <span className='text-foreground'>{getValue<number>()}</span>,
+            },
+            {
+                id: 'details',
+                size: 140,
+                header: () => <p className='column-title ml-2'>Details</p>,
+                cell: ({ row }) => <ShowButton resource="classes" recordItemId={row.original.id} variant="outline" size="sm">View</ShowButton>,
             }
         ], []),
         refineCoreProps: {

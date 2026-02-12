@@ -1,6 +1,7 @@
 import { CreateResponse, ListResponse } from '@/types';
 import { createDataProvider ,CreateDataProviderOptions } from '@refinedev/rest';
 import { BACKEND_BASE_URL } from '@/constants';
+import { GetOneResponse } from '@refinedev/core';
 
 if(!BACKEND_BASE_URL){
   throw new Error("BACKEND_BASE_URL is not defined. Please set it in the environment variables.");
@@ -92,6 +93,17 @@ const options: CreateDataProviderOptions = {
       const json: CreateResponse = await response.json();
 
       return json.data ?? [];
+    }
+  },
+  getOne: {
+    getEndpoint: ({ resource, id }) => `${resource}/${id}`,
+
+    mapResponse: async (response) => {
+      if (!response.ok) {
+        throw await buildhttpError(response);
+      }
+      const json: GetOneResponse = await response.json();
+      return json.data ?? null;
     }
   }
 };
