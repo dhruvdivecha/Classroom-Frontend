@@ -106,7 +106,7 @@ const ClassesList: React.FC = () => {
         },
     });
 
-    // Fetch teachers for filter dropdown (admin only — /users requires admin role)
+    // Fetch teachers for filter dropdown (admin & teacher can access /users)
     const { query: teachersQuery } = useList<User>({
         resource: "users",
         filters: [
@@ -120,7 +120,7 @@ const ClassesList: React.FC = () => {
             pageSize: 100,
         },
         queryOptions: {
-            enabled: userRole === 'admin',
+            enabled: userRole === 'admin' || userRole === 'teacher',
         },
     });
 
@@ -333,7 +333,7 @@ const ClassesList: React.FC = () => {
                                 ))}
                             </SelectContent>   
                         </Select>
-                        {userRole === 'admin' && (
+                        {(userRole === 'admin' || userRole === 'teacher') && (
                         <Select value={selectedTeacher ?? undefined} onValueChange={(value) => setSelectedTeacher(value)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Filter by Teacher" />

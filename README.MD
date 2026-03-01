@@ -39,9 +39,11 @@ A modern classroom management web application built with **React**, **Refine**, 
 
 - View enrolled classes with schedules and teacher info
 - Browse available classes and subjects
-- Request to join classes via invite code or join request
+- Request to join classes with an optional message to the teacher
+- See join request status (Pending / Approved / Rejected) on the classes list
 - Track pending join requests
 - Personal dashboard with enrolled class overview
+- Mobile: class names link directly to class details page
 
 ---
 
@@ -52,10 +54,11 @@ A modern classroom management web application built with **React**, **Refine**, 
 </video>
 
 - Create and manage own classes (schedule, capacity, banner image)
-- View enrolled students per class
+- View and manually enroll students per class
 - Approve or reject student join requests
 - Dashboard with own class stats, enrollment counts, and pending requests
 - Edit class details, status, and schedules
+- **Note:** Unapproved teachers (email not verified) see a student view until an admin verifies their account
 
 ---
 
@@ -85,6 +88,7 @@ A modern classroom management web application built with **React**, **Refine**, 
 - **Responsive design** — works on desktop, tablet, and mobile
 - **Session-based authentication** with secure cookies
 - **Role-based sidebar** — menu items adapt to user role
+- **Unapproved teacher handling** — teachers without email verification see the student experience until approved
 - **Pending requests badge** in sidebar for teachers and admins
 - **Cloudinary image uploads** for class banners and profile pictures
 - **Search, filter, and pagination** across all list views

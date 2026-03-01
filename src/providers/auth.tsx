@@ -87,12 +87,15 @@ export const authProvider: AuthProvider = {
       const session = await authClient.getSession();
       if (session?.data?.user) {
         const user = session.data.user;
+        const dbRole = ((user as Record<string, unknown>).role as User['role']) || 'student';
+        // Unapproved teachers are treated as students until verified
+        const effectiveRole = dbRole === 'teacher' && !user.emailVerified ? 'student' : dbRole;
         return {
           id: user.id,
           name: user.name || user.email,
           email: user.email,
           avatar: user.image,
-          role: ((user as Record<string, unknown>).role as User['role']) || 'student',
+          role: effectiveRole,
           emailVerified: user.emailVerified ?? false,
         };
       }
