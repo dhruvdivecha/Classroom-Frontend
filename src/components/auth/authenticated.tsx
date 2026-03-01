@@ -4,8 +4,8 @@ import { Outlet } from 'react-router';
 export const AuthenticatedLayout = () => {
   return (
     <Authenticated
+      key="auth-check"
       redirectOnFail="/login"
-      v3LegacyAuthProviderCompatible={true}
     >
       <Outlet />
     </Authenticated>

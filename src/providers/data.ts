@@ -29,16 +29,6 @@ const buildhttpError = async (response: Response): Promise<HttpError> => {
 
 }
 const options: CreateDataProviderOptions = {
-  httpClient: async (url, options = {}) => {
-    return fetch(url, {
-      ...options,
-      credentials: 'include', // Include cookies for authentication
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-  },
   getList: {
     getEndpoint: (params) => params.resource,
 
@@ -141,6 +131,11 @@ const options: CreateDataProviderOptions = {
 };
 
 
-const { dataProvider } = createDataProvider(BACKEND_BASE_URL, options);
+const { dataProvider } = createDataProvider(BACKEND_BASE_URL, options, {
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export { dataProvider };

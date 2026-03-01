@@ -89,7 +89,7 @@ const Show = () => {
 
   const pendingRequest = joinRequests.find((r) => r.status === 'pending');
   const isEnrolled = enrollments.some((e) => e.studentId === userId);
-  const isClassTeacher = classDetails?.teacherId === userId;
+  const isClassTeacher = classDetails?.teacher?.id === userId;
 
   const { result: studentsResult } = useList<User>({
     resource: 'users',

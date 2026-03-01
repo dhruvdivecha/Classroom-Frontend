@@ -3,7 +3,7 @@ import { authClient } from '@/lib/auth-client';
 import type { User } from '@/types';
 
 export const authProvider: AuthProvider = {
-  login: async ({ email, password, role }) => {
+  login: async ({ email, password }) => {
     try {
       const result = await authClient.signIn.email({
         email,
@@ -92,7 +92,7 @@ export const authProvider: AuthProvider = {
           name: user.name || user.email,
           email: user.email,
           avatar: user.image,
-          role: (user.role as User['role']) || 'student',
+          role: ((user as Record<string, unknown>).role as User['role']) || 'student',
         };
       }
       return null;
@@ -102,13 +102,12 @@ export const authProvider: AuthProvider = {
   },
   register: async ({ email, password, name, role }) => {
     try {
-      const result = await authClient.signUp.email({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (authClient.signUp as any).email({
         email,
         password,
         name,
-        body: {
-          role: role || 'student',
-        },
+        role: role || 'student',
       });
 
       if (result.error) {

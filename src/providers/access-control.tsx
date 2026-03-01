@@ -2,10 +2,10 @@ import { AccessControlProvider } from '@refinedev/core';
 import { authClient } from '@/lib/auth-client';
 
 export const accessControlProvider: AccessControlProvider = {
-  can: async ({ resource, action, params }) => {
+  can: async ({ resource, action }) => {
     try {
       const session = await authClient.getSession();
-      const userRole = session?.data?.user?.role || 'student';
+      const userRole = (session?.data?.user as Record<string, unknown> | undefined)?.role as string || 'student';
 
       // Admin has full access
       if (userRole === 'admin') {

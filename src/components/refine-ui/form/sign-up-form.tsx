@@ -45,7 +45,7 @@ export const SignUpForm = () => {
 
   const { title } = useRefineOptions();
 
-  const { mutate: register, isLoading } = useRegister();
+  const { mutate: register, isPending } = useRegister();
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -170,7 +170,7 @@ export const SignUpForm = () => {
             <Button
               type="submit"
               size="lg"
-              disabled={isLoading}
+              disabled={isPending}
               className={cn(
                 "w-full",
                 "mt-6",
@@ -179,7 +179,7 @@ export const SignUpForm = () => {
                 "text-white"
               )}
             >
-              {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Signing up...</> : "Sign up"}
+              {isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Signing up...</> : "Sign up"}
             </Button>
 
           </form>

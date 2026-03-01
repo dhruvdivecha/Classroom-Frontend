@@ -30,7 +30,7 @@ export const SignInForm = () => {
 
   const { title } = useRefineOptions();
 
-  const { mutate: login, isLoading } = useLogin();
+  const { mutate: login, isPending } = useLogin();
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -132,8 +132,8 @@ export const SignInForm = () => {
               </Link>
             </div>
 
-            <Button type="submit" size="lg" className={cn("w-full", "mt-6")} disabled={isLoading}>
-              {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Signing in...</> : "Sign in"}
+            <Button type="submit" size="lg" className={cn("w-full", "mt-6")} disabled={isPending}>
+              {isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Signing in...</> : "Sign in"}
             </Button>
           </form>
         </CardContent>
