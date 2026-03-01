@@ -32,13 +32,14 @@ export const SignInForm = () => {
 
   const { mutate: login, isPending } = useLogin();
 
-  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    login({
-      email,
-      password,
-    });
+    // Clear password from state before login to prevent repeated save-password prompts
+    const credentials = { email, password };
+    setPassword('');
+
+    login(credentials);
   };
 
 
