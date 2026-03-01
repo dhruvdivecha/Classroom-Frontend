@@ -2,17 +2,11 @@
 
 A modern classroom management web application built with **React**, **Refine**, and **shadcn/ui**. Features role-based dashboards and access control for admins, teachers, and students.
 
-<!-- Add screenshots below -->
+<!-- Screenshots -->
 <p align="center">
-  <img src="" alt="Dashboard Screenshot" width="45%" />
-  &nbsp;&nbsp;
-  <img src="" alt="Classes Screenshot" width="45%" />
+  <img src="screenshots/dashboard-top.png" alt="Admin Dashboard — Stats, Enrollment Trends & Classes by Department" width="100%" />
 </p>
-<p align="center">
-  <img src="" alt="Mobile View" width="30%" />
-  &nbsp;&nbsp;
-  <img src="" alt="Dark Mode" width="45%" />
-</p>
+
 
 ---
 

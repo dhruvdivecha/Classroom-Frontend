@@ -228,18 +228,18 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-2 sm:p-4 min-w-0">
+    <div className="flex flex-col gap-4 sm:gap-6 p-2 sm:p-4 min-w-0 overflow-hidden">
       <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
 
-      <div className={`grid gap-4 ${userRole === 'admin' ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+      <div className={`grid gap-3 sm:gap-4 grid-cols-2 ${userRole === 'admin' ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
         {cards.map(({ title, value, icon: Icon }) => (
           <Card key={title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate mr-2">{title}</CardTitle>
+              <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{value}</div>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{value}</div>
             </CardContent>
           </Card>
         ))}
@@ -339,7 +339,7 @@ export default function Dashboard() {
 
       {/* Charts - show for admin and teacher */}
       {(userRole === 'admin' || userRole === 'teacher') && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Enrollment trends</CardTitle>
@@ -347,8 +347,8 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {trends.length > 0 ? (
-              <ChartContainer config={{ count: { label: 'Enrollments', color: 'var(--chart-1)' } }} className="h-[240px] w-full">
-                <BarChart data={trends} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+              <ChartContainer config={{ count: { label: 'Enrollments', color: 'var(--chart-1)' } }} className="h-[200px] sm:h-[240px] w-full">
+                <BarChart data={trends} margin={{ top: 8, right: 8, left: -16, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
@@ -368,9 +368,9 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {byDept.length > 0 ? (
-              <ChartContainer config={Object.fromEntries(byDept.map((d, i) => [d.name, { color: chartColors[i % chartColors.length] }]))} className="h-[240px] w-full">
+              <ChartContainer config={Object.fromEntries(byDept.map((d, i) => [d.name, { color: chartColors[i % chartColors.length] }]))} className="h-[200px] sm:h-[240px] w-full">
                 <PieChart>
-                  <Pie data={byDept} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(e) => `${e.name}: ${e.count}`}>
+                  <Pie data={byDept} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius="70%" label={(e) => `${e.name}: ${e.count}`}>
                     {byDept.map((_, i) => (
                       <Cell key={i} fill={chartColors[i % chartColors.length]} />
                     ))}
@@ -391,9 +391,9 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {capacity.length > 0 ? (
-              <ChartContainer config={{ 'At capacity': { color: 'var(--destructive)' }, 'Under capacity': { color: 'var(--chart-2)' } } } className="h-[240px] w-full">
+              <ChartContainer config={{ 'At capacity': { color: 'var(--destructive)' }, 'Under capacity': { color: 'var(--chart-2)' } } } className="h-[200px] sm:h-[240px] w-full">
                 <PieChart>
-                  <Pie data={capacity} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                  <Pie data={capacity} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius="70%" label>
                     {capacity.map((_, i) => (
                       <Cell key={i} fill={i === 0 ? 'var(--destructive)' : 'var(--chart-2)'} />
                     ))}
@@ -416,9 +416,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {userDist.length > 0 ? (
-                <ChartContainer config={Object.fromEntries(userDist.map((d, i) => [d.name, { color: chartColors[i % chartColors.length] }]))} className="h-[240px] w-full">
+                <ChartContainer config={Object.fromEntries(userDist.map((d, i) => [d.name, { color: chartColors[i % chartColors.length] }]))} className="h-[200px] sm:h-[240px] w-full">
                   <PieChart>
-                    <Pie data={userDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(e) => `${e.name}: ${e.value}`}>
+                    <Pie data={userDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius="70%" label={(e) => `${e.name}: ${e.value}`}>
                       {userDist.map((_, i) => (
                         <Cell key={i} fill={chartColors[i % chartColors.length]} />
                       ))}
@@ -450,11 +450,11 @@ export default function Dashboard() {
             ) : (
               <ul className="space-y-3 max-h-[320px] overflow-auto">
                 {activity.map((a) => (
-                  <li key={a.id} className="flex justify-between text-sm border-b pb-2 last:border-0">
-                    <span>
+                  <li key={a.id} className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm border-b pb-2 last:border-0">
+                    <span className="break-words">
                       <strong>{a.studentName ?? a.studentEmail}</strong> enrolled in <strong>{a.className}</strong>
                     </span>
-                    <span className="text-muted-foreground">{new Date(a.createdAt).toLocaleString()}</span>
+                    <span className="text-muted-foreground text-xs sm:text-sm shrink-0">{new Date(a.createdAt).toLocaleString()}</span>
                   </li>
                 ))}
               </ul>
