@@ -2,8 +2,9 @@ export type Subject = {
   id: number;
   name: string;
   code: string;
-  description: string;
-  department: string;
+  description?: string | null;
+  departmentId?: number;
+  department?: { id?: number; name?: string; code?: string } | string;
   createdAt?: string;
 };
 
@@ -76,6 +77,7 @@ export type User = {
   createdAt: string;
   updatedAt: string;
   email: string;
+  emailVerified: boolean;
   name: string;
   role: UserRole;
   image?: string;
@@ -91,21 +93,30 @@ export type Schedule = {
 
 export type Department = {
   id: number;
+  code: string;
   name: string;
-  description: string;
+  description?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type EnrollmentWithStudent = {
+  id: number;
+  studentId: string;
+  classId: number;
+  createdAt: string;
+  student: { id: string; name: string | null; email: string; role: string };
 };
 
 export type ClassDetails = {
   id: number;
   name: string;
-  description: string;
-  status: "active" | "inactive";
+  description?: string | null;
+  status: "active" | "inactive" | "archived";
   capacity: number;
-  courseCode: string;
-  courseName: string;
-  bannerUrl?: string;
-  bannerCldPubId?: string;
-  subject?: Subject;
+  bannerUrl?: string | null;
+  bannerCldPubId?: string | null;
+  subject?: Subject & { name?: string; code?: string };
   teacher?: User;
   department?: Department;
   schedules: Schedule[];

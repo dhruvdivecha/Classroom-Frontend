@@ -1,4 +1,5 @@
 import { useForm } from "@refinedev/react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
 import { CreateView } from "@/components/refine-ui/views/create-view";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { Textarea } from "@/components/ui/textarea";
-import { useBack, useList } from "@refinedev/core";
+import { useBack, useList, useGetIdentity } from "@refinedev/core";
 import { Loader2 } from "lucide-react";
 import { classSchema } from "@/lib/schema";
 import UploadWidget from "@/components/upload-widget";
@@ -31,9 +32,17 @@ import { z } from "zod";
 
 const ClassesCreate = () => {
     const back = useBack();
+    const { data: identity } = useGetIdentity();
+    const userRole = identity?.role || 'student';
+    const isTeacher = userRole === 'teacher';
+
+    // For teachers, override teacherId to allow empty (we inject it on submit)
+    const resolvedSchema = isTeacher
+        ? classSchema.extend({ teacherId: z.string().optional() })
+        : classSchema;
 
     const form = useForm({
-        resolver: zodResolver(classSchema),
+        resolver: zodResolver(resolvedSchema),
         refineCoreProps: {
             resource: "classes",
             action: "create",
@@ -52,10 +61,14 @@ const ClassesCreate = () => {
 
     const bannerPublicId = form.watch("bannerCldPubId");
 
-    const onSubmit = async (values: z.infer<typeof classSchema>) => {
+    const onSubmit = async (values: Record<string, unknown>) => {
         if (isSubmitting) return;
         try {
-            await onFinish(values);
+            // Ensure teacherId is set for teachers
+            if (isTeacher && identity?.id) {
+                values.teacherId = identity.id as string;
+            }
+            await onFinish(values as z.infer<typeof classSchema>);
         } catch (error) {
             console.error("Error creating class:", error);
         }
@@ -80,10 +93,20 @@ const ClassesCreate = () => {
         pagination: {
             pageSize: 100,
         },
+        queryOptions: {
+            enabled: !isTeacher, // Only admins need to fetch the teacher list
+        },
     });
 
     const teachers = teachersQuery.data?.data || [];
-    const teachersLoading = teachersQuery.isLoading;
+    const teachersLoading = teachersQuery.isLoading && !isTeacher;
+
+    // Auto-assign teacher when user is a teacher
+    useEffect(() => {
+        if (isTeacher && identity?.id) {
+            form.setValue("teacherId", identity.id as string, { shouldValidate: true });
+        }
+    }, [isTeacher, identity?.id]);
 
     const subjects = subjectsQuery.data?.data || [];
     const subjectsLoading = subjectsQuery.isLoading;
@@ -218,24 +241,34 @@ const ClassesCreate = () => {
                                                 <FormLabel>
                                                     Teacher <span className="text-orange-600">*</span>
                                                 </FormLabel>
-                                                <Select
-                                                    onValueChange={field.onChange}
-                                                    value={field.value?.toString()}
-                                                    disabled={teachersLoading}
-                                                >
+                                                {isTeacher ? (
                                                     <FormControl>
-                                                        <SelectTrigger className="w-full bg-background text-foreground placeholder:text-muted-foreground border-border">
-                                                            <SelectValue placeholder="Select a teacher" />
-                                                        </SelectTrigger>
+                                                        <Input
+                                                            value={identity?.name || identity?.email || 'You'}
+                                                            disabled
+                                                            className="bg-muted text-foreground"
+                                                        />
                                                     </FormControl>
-                                                    <SelectContent>
-                                                        {teachers.map((teacher) => (
-                                                            <SelectItem key={teacher.id} value={teacher.id}>
-                                                                {teacher.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                ) : (
+                                                    <Select
+                                                        onValueChange={field.onChange}
+                                                        value={field.value?.toString()}
+                                                        disabled={teachersLoading}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger className="w-full bg-background text-foreground placeholder:text-muted-foreground border-border">
+                                                                <SelectValue placeholder="Select a teacher" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {teachers.map((teacher) => (
+                                                                <SelectItem key={teacher.id} value={teacher.id}>
+                                                                    {teacher.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
                                                 <FormMessage />
                                             </FormItem>
                                         )}

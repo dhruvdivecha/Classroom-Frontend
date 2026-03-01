@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { Breadcrumb } from '@/components/refine-ui/layout/breadcrumb'
 import { ListView } from '@/components/refine-ui/views/list-view'
-import { Search } from 'lucide-react'
+import { Search, Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from '@/components/ui/select'
 import { CreateButton } from '@/components/refine-ui/buttons/create'
 import { useTable } from '@refinedev/react-table';
@@ -9,13 +10,56 @@ import { ClassDetails, Subject, User } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/refine-ui/data-table/data-table'
-import { useList } from '@refinedev/core'
+import { useList, useGetIdentity, useNotification } from '@refinedev/core'
 import { ShowButton } from '@/components/refine-ui/buttons/show'
+import { EditButton } from '@/components/refine-ui/buttons/edit'
+import { DeleteButton } from '@/components/refine-ui/buttons/delete'
+import { useCan } from '@refinedev/core'
+import { Button } from '@/components/ui/button'
+import { createJoinRequest } from '@/lib/join-requests-api'
 
 const ClassesList: React.FC = () => {
-	const [searchTerm, setSearchTerm] = React.useState('')
-    const [selectedSubject, setSelectedSubject] = React.useState("all")
-    const [selectedTeacher, setSelectedTeacher] = React.useState("all")
+    const [searchParams, setSearchParams] = useSearchParams()
+    const searchFromUrl = searchParams.get('search') ?? ''
+    const subjectFromUrl = searchParams.get('subject') ?? 'all'
+    const teacherFromUrl = searchParams.get('teacher') ?? 'all'
+	const [searchTerm, setSearchTerm] = React.useState(searchFromUrl)
+    const [selectedSubject, setSelectedSubject] = React.useState(subjectFromUrl)
+    const [selectedTeacher, setSelectedTeacher] = React.useState(teacherFromUrl)
+    const { data: canCreate } = useCan({ resource: 'classes', action: 'create' })
+    const { data: identity } = useGetIdentity()
+    const userRole = identity?.role || 'student'
+    const { open } = useNotification()
+    const [joiningClassId, setJoiningClassId] = useState<number | null>(null)
+
+    const handleJoin = async (classId: number) => {
+        setJoiningClassId(classId)
+        try {
+            await createJoinRequest(classId)
+            open?.({ type: 'success', message: 'Join request sent!' })
+        } catch (e) {
+            open?.({ type: 'error', message: e instanceof Error ? e.message : 'Failed to send join request' })
+        } finally {
+            setJoiningClassId(null)
+        }
+    }
+
+    useEffect(() => {
+        setSearchTerm(searchFromUrl)
+        setSelectedSubject(subjectFromUrl)
+        setSelectedTeacher(teacherFromUrl)
+    }, [searchFromUrl, subjectFromUrl, teacherFromUrl])
+
+    useEffect(() => {
+        const next = new URLSearchParams(searchParams)
+        if (searchTerm) next.set('search', searchTerm)
+        else next.delete('search')
+        if (selectedSubject && selectedSubject !== 'all') next.set('subject', selectedSubject)
+        else next.delete('subject')
+        if (selectedTeacher && selectedTeacher !== 'all') next.set('teacher', selectedTeacher)
+        else next.delete('teacher')
+        setSearchParams(next, { replace: true })
+    }, [searchTerm, selectedSubject, selectedTeacher])
 
     // Fetch subjects for filter dropdown
     const { query: subjectsQuery } = useList<Subject>({
@@ -148,12 +192,31 @@ const ClassesList: React.FC = () => {
                 cell: ({ getValue }) => <span className='text-foreground'>{getValue<number>()}</span>,
             },
             {
-                id: 'details',
-                size: 140,
-                header: () => <p className='column-title ml-2'>Details</p>,
-                cell: ({ row }) => <ShowButton resource="classes" recordItemId={row.original.id} variant="outline" size="sm">View</ShowButton>,
+                id: 'actions',
+                size: 200,
+                header: () => <p className='column-title ml-2'>Actions</p>,
+                cell: ({ row }) => (
+                    <div className='flex gap-2'>
+                        {userRole === 'student' ? (
+                            <Button
+                                size="sm"
+                                onClick={() => handleJoin(row.original.id)}
+                                disabled={joiningClassId === row.original.id}
+                            >
+                                {joiningClassId === row.original.id && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                                Join
+                            </Button>
+                        ) : (
+                            <>
+                                <ShowButton resource="classes" recordItemId={row.original.id} variant="outline" size="sm">View</ShowButton>
+                                <EditButton resource="classes" recordItemId={row.original.id} variant="outline" size="sm">Edit</EditButton>
+                                <DeleteButton resource="classes" recordItemId={row.original.id} size="sm" />
+                            </>
+                        )}
+                    </div>
+                ),
             }
-        ], []),
+        ], [userRole, joiningClassId]),
         refineCoreProps: {
             resource: 'classes',
             pagination: {
@@ -223,7 +286,7 @@ const ClassesList: React.FC = () => {
                                 ))}
                             </SelectContent>   
                         </Select>
-                        <CreateButton resource="classes" />
+                        {canCreate?.can && <CreateButton resource="classes" />}
                     </div>
 				</div>
 			</div>

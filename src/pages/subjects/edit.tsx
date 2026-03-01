@@ -5,21 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { CreateView } from '@/components/refine-ui/views/create-view';
-import { Breadcrumb } from '@/components/refine-ui/layout/breadcrumb';
+import { EditView, EditViewHeader } from '@/components/refine-ui/views/edit-view';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useBack, useList } from '@refinedev/core';
+import { useList } from '@refinedev/core';
 import { Loader2 } from 'lucide-react';
 import { subjectSchema } from '@/lib/schema';
-import { Department } from '@/types';
+import { Department, Subject } from '@/types';
 import { z } from 'zod';
 
-const SubjectsCreate = () => {
-  const back = useBack();
+type SubjectFormValues = z.infer<typeof subjectSchema>;
+
+const SubjectsEdit = () => {
   const form = useForm({
     resolver: zodResolver(subjectSchema),
-    refineCoreProps: { resource: 'subjects', action: 'create' },
+    refineCoreProps: { resource: 'subjects', action: 'edit' },
     defaultValues: { name: '', code: '', description: '', departmentId: undefined },
   });
   const { refineCore: { onFinish }, handleSubmit, formState: { isSubmitting }, control } = form;
@@ -27,7 +27,7 @@ const SubjectsCreate = () => {
   const { result: deptResult } = useList<Department>({ resource: 'departments', pagination: { pageSize: 200 } });
   const departments = deptResult?.data ?? [];
 
-  const onSubmit = async (values: z.infer<typeof subjectSchema>) => {
+  const onSubmit = async (values: SubjectFormValues & Record<string, unknown>) => {
     try {
       await onFinish(values);
     } catch (e) {
@@ -36,14 +36,8 @@ const SubjectsCreate = () => {
   };
 
   return (
-    <CreateView>
-      <Breadcrumb />
-      <h1 className="page-title">Create Subject</h1>
-      <div className="intro-row">
-        <p>Add a new subject. Select a department.</p>
-        <Button onClick={() => back()}>Go Back</Button>
-      </div>
-      <Separator />
+    <EditView>
+      <EditViewHeader resource="subjects" title="Edit Subject" />
       <Card>
         <CardHeader><CardTitle>Subject details</CardTitle></CardHeader>
         <Separator />
@@ -76,7 +70,7 @@ const SubjectsCreate = () => {
               <FormField control={control} name="name" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
-                  <FormControl><Input placeholder="Introduction to Programming" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Subject name" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -89,14 +83,14 @@ const SubjectsCreate = () => {
               )} />
               <Separator />
               <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? <><span>Creating...</span><Loader2 className="ml-2 inline h-4 w-4 animate-spin" /></> : 'Create Subject'}
+                {isSubmitting ? <><span>Saving...</span><Loader2 className="ml-2 inline h-4 w-4 animate-spin" /></> : 'Save'}
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
-    </CreateView>
+    </EditView>
   );
 };
 
-export default SubjectsCreate;
+export default SubjectsEdit;

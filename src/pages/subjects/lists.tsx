@@ -1,29 +1,51 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router'
 import { Breadcrumb } from '@/components/refine-ui/layout/breadcrumb'
 import { ListView } from '@/components/refine-ui/views/list-view'
 import { Search } from 'lucide-react'
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from '@/components/ui/select'
-import { DEPARTMENT_OPTIONS } from '@/constants'
 import { CreateButton } from '@/components/refine-ui/buttons/create'
+import { useCan, useGetIdentity } from '@refinedev/core'
 import { useTable } from '@refinedev/react-table';
-import { Subject } from '@/types';
+import { useList } from '@refinedev/core';
+import { Subject, Department } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/refine-ui/data-table/data-table'
+import { ShowButton } from '@/components/refine-ui/buttons/show'
+import { EditButton } from '@/components/refine-ui/buttons/edit'
+import { DeleteButton } from '@/components/refine-ui/buttons/delete'
 
 const SubjectsList: React.FC = () => {
-	const [searchTerm, setSearchTerm] = React.useState('')
-    const [selectedFilter, setSelectedFilter] = React.useState("all")
+    const [searchParams, setSearchParams] = useSearchParams()
+    const searchFromUrl = searchParams.get('search') ?? ''
+    const deptFromUrl = searchParams.get('department') ?? 'all'
+	const [searchTerm, setSearchTerm] = React.useState(searchFromUrl)
+    const [selectedFilter, setSelectedFilter] = React.useState(deptFromUrl)
+    const { data: canCreate } = useCan({ resource: 'subjects', action: 'create' })
+    const { data: identity } = useGetIdentity()
+    const userRole = identity?.role || 'student'
+
+    useEffect(() => {
+        setSearchTerm(searchFromUrl)
+        setSelectedFilter(deptFromUrl)
+    }, [searchFromUrl, deptFromUrl])
+
+    useEffect(() => {
+        const next = new URLSearchParams(searchParams)
+        if (searchTerm) next.set('search', searchTerm)
+        else next.delete('search')
+        if (selectedFilter && selectedFilter !== 'all') next.set('department', selectedFilter)
+        else next.delete('department')
+        setSearchParams(next, { replace: true })
+    }, [searchTerm, selectedFilter])
+
+    const { result: deptResult } = useList<Department>({ resource: 'departments', pagination: { pageSize: 200 } })
+    const departments = deptResult?.data ?? []
 
     const filterDepartment = React.useMemo(() => {
         if (selectedFilter && selectedFilter !== 'all') {
-            return [
-                {
-                    field: 'department',
-                    operator: 'eq' as const,
-                    value: selectedFilter,
-                }
-            ]
+            return [{ field: 'department' as const, operator: 'eq' as const, value: selectedFilter }]
         }
         return []
     }, [selectedFilter]);
@@ -63,16 +85,36 @@ const SubjectsList: React.FC = () => {
                 accessorKey: 'department.name',
                 size: 150,
                 header: () => <p className='column-title ml-2'>Department</p>,
-                cell: ({ getValue }) => <Badge variant='secondary'>{getValue<string>()}</Badge>,
+                cell: ({ row }) => {
+                    const dep = row.original.department;
+                    const name = typeof dep === 'object' && dep && 'name' in dep ? (dep as { name?: string }).name : null;
+                    return <Badge variant='secondary'>{name ?? '—'}</Badge>;
+                },
             },
             {
                 id: 'description',
                 accessorKey: 'description',
                 size: 300,
                 header: () => <p className='column-title ml-2'>Description</p>,
-                cell: ({ getValue }) => <span className='truncate line-clamp-2'>{getValue<string>()}</span>,
-            }
-        ], []),
+                cell: ({ getValue }) => <span className='truncate line-clamp-2'>{getValue<string>() ?? '—'}</span>,
+            },
+            {
+                id: 'actions',
+                size: 180,
+                header: () => <p className='column-title ml-2'>Actions</p>,
+                cell: ({ row }) => (
+                    <div className='flex gap-2'>
+                        <ShowButton resource='subjects' recordItemId={row.original.id} variant='outline' size='sm'>View</ShowButton>
+                        {userRole !== 'student' && (
+                            <>
+                                <EditButton resource='subjects' recordItemId={row.original.id} variant='outline' size='sm'>Edit</EditButton>
+                                <DeleteButton resource='subjects' recordItemId={row.original.id} size='sm' />
+                            </>
+                        )}
+                    </div>
+                ),
+            },
+        ], [userRole]),
         refineCoreProps: {
             resource: 'subjects',
             pagination: {
@@ -122,14 +164,14 @@ const SubjectsList: React.FC = () => {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Departments</SelectItem>
-                                {DEPARTMENT_OPTIONS.map((dept) => (
-                                    <SelectItem key={dept.value} value={dept.value}>
-                                        {dept.label}
+                                {departments.map((dept: Department) => (
+                                    <SelectItem key={dept.id} value={dept.name}>
+                                        {dept.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>   
                         </Select>
-                        <CreateButton />
+                        {canCreate?.can && <CreateButton />}
                     </div>
 				</div>
 			</div>
