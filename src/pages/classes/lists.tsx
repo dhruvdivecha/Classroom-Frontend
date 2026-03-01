@@ -1,10 +1,17 @@
 import React, { useMemo, useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useSearchParams, Link } from 'react-router'
 import { Breadcrumb } from '@/components/refine-ui/layout/breadcrumb'
 import { ListView } from '@/components/refine-ui/views/list-view'
-import { Search, Loader2 } from 'lucide-react'
+import { Search, Loader2, Send } from 'lucide-react'
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from '@/components/ui/select'
 import { CreateButton } from '@/components/refine-ui/buttons/create'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { useTable } from '@refinedev/react-table';
 import { ClassDetails, Subject, User } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
@@ -16,7 +23,8 @@ import { EditButton } from '@/components/refine-ui/buttons/edit'
 import { DeleteButton } from '@/components/refine-ui/buttons/delete'
 import { useCan } from '@refinedev/core'
 import { Button } from '@/components/ui/button'
-import { createJoinRequest } from '@/lib/join-requests-api'
+import { createJoinRequest, getJoinRequests } from '@/lib/join-requests-api'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 const ClassesList: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -29,20 +37,49 @@ const ClassesList: React.FC = () => {
     const { data: canCreate } = useCan({ resource: 'classes', action: 'create' })
     const { data: identity } = useGetIdentity()
     const userRole = identity?.role || 'student'
+    const emailVerified = identity?.emailVerified ?? false
     const { open } = useNotification()
     const [joiningClassId, setJoiningClassId] = useState<number | null>(null)
+    const isMobile = useIsMobile()
+    const [joinRequestStatusMap, setJoinRequestStatusMap] = useState<Record<number, string>>({})
+    const [joinDialogOpen, setJoinDialogOpen] = useState(false)
+    const [joinDialogClassId, setJoinDialogClassId] = useState<number | null>(null)
+    const [joinMessage, setJoinMessage] = useState('')
 
-    const handleJoin = async (classId: number) => {
+    const openJoinDialog = (classId: number) => {
+        setJoinDialogClassId(classId)
+        setJoinMessage('')
+        setJoinDialogOpen(true)
+    }
+
+    const handleJoin = async () => {
+        if (!joinDialogClassId) return
+        const classId = joinDialogClassId
         setJoiningClassId(classId)
         try {
-            await createJoinRequest(classId)
+            await createJoinRequest(classId, joinMessage || undefined)
             open?.({ type: 'success', message: 'Join request sent!' })
+            setJoinRequestStatusMap((prev) => ({ ...prev, [classId]: 'pending' }))
+            setJoinDialogOpen(false)
         } catch (e) {
             open?.({ type: 'error', message: e instanceof Error ? e.message : 'Failed to send join request' })
         } finally {
             setJoiningClassId(null)
         }
     }
+
+    // Fetch student's join requests to show pending/rejected state
+    useEffect(() => {
+        if (userRole === 'student') {
+            getJoinRequests().then((requests) => {
+                const map: Record<number, string> = {}
+                for (const req of requests) {
+                    map[req.classId] = req.status
+                }
+                setJoinRequestStatusMap(map)
+            }).catch(() => { /* ignore */ })
+        }
+    }, [userRole])
 
     useEffect(() => {
         setSearchTerm(searchFromUrl)
@@ -69,7 +106,7 @@ const ClassesList: React.FC = () => {
         },
     });
 
-    // Fetch teachers for filter dropdown
+    // Fetch teachers for filter dropdown (admin only — /users requires admin role)
     const { query: teachersQuery } = useList<User>({
         resource: "users",
         filters: [
@@ -81,6 +118,9 @@ const ClassesList: React.FC = () => {
         ],
         pagination: {
             pageSize: 100,
+        },
+        queryOptions: {
+            enabled: userRole === 'admin',
         },
     });
 
@@ -153,7 +193,13 @@ const ClassesList: React.FC = () => {
                 accessorKey: 'name',
                 size: 200,
                 header: () => <p className='column-title ml-2'>Class Name</p>,
-                cell: ({ getValue }) => <span className='text-foreground font-medium'>{getValue<string>()}</span>,
+                cell: ({ getValue, row }) => isMobile ? (
+                    <Link to={`/classes/show/${row.original.id}`} className='text-primary font-medium underline underline-offset-2'>
+                        {getValue<string>()}
+                    </Link>
+                ) : (
+                    <span className='text-foreground font-medium'>{getValue<string>()}</span>
+                ),
                 filterFn: "includesString",
             },
             {
@@ -195,28 +241,42 @@ const ClassesList: React.FC = () => {
                 id: 'actions',
                 size: 200,
                 header: () => <p className='column-title ml-2'>Actions</p>,
-                cell: ({ row }) => (
-                    <div className='flex gap-2'>
-                        {userRole === 'student' ? (
-                            <Button
-                                size="sm"
-                                onClick={() => handleJoin(row.original.id)}
-                                disabled={joiningClassId === row.original.id}
-                            >
-                                {joiningClassId === row.original.id && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                                Join
-                            </Button>
-                        ) : (
-                            <>
-                                <ShowButton resource="classes" recordItemId={row.original.id} variant="outline" size="sm">View</ShowButton>
-                                <EditButton resource="classes" recordItemId={row.original.id} variant="outline" size="sm">Edit</EditButton>
-                                <DeleteButton resource="classes" recordItemId={row.original.id} size="sm" />
-                            </>
-                        )}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const classId = row.original.id
+                    const requestStatus = joinRequestStatusMap[classId]
+                    return (
+                        <div className='flex gap-2'>
+                            {userRole === 'student' ? (
+                                requestStatus === 'rejected' ? (
+                                    <Badge variant="destructive">Rejected</Badge>
+                                ) : requestStatus === 'pending' ? (
+                                    <Badge variant="secondary">Pending</Badge>
+                                ) : requestStatus === 'approved' ? (
+                                    <Badge variant="default">Enrolled</Badge>
+                                ) : !emailVerified ? (
+                                    <Badge variant="outline">Awaiting Approval</Badge>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => openJoinDialog(classId)}
+                                        disabled={joiningClassId === classId}
+                                    >
+                                        {joiningClassId === classId && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                                        Join
+                                    </Button>
+                                )
+                            ) : (
+                                <>
+                                    <ShowButton resource="classes" recordItemId={classId} variant="outline" size="sm">View</ShowButton>
+                                    <EditButton resource="classes" recordItemId={classId} variant="outline" size="sm">Edit</EditButton>
+                                    <DeleteButton resource="classes" recordItemId={classId} size="sm" />
+                                </>
+                            )}
+                        </div>
+                    )
+                },
             }
-        ], [userRole, joiningClassId]),
+        ], [userRole, joiningClassId, isMobile, joinRequestStatusMap, emailVerified]),
         refineCoreProps: {
             resource: 'classes',
             pagination: {
@@ -273,6 +333,7 @@ const ClassesList: React.FC = () => {
                                 ))}
                             </SelectContent>   
                         </Select>
+                        {userRole === 'admin' && (
                         <Select value={selectedTeacher ?? undefined} onValueChange={(value) => setSelectedTeacher(value)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Filter by Teacher" />
@@ -286,11 +347,39 @@ const ClassesList: React.FC = () => {
                                 ))}
                             </SelectContent>   
                         </Select>
+                        )}
                         {canCreate?.can && <CreateButton resource="classes" />}
                     </div>
 				</div>
 			</div>
             <DataTable table={classesTable} />
+
+            {/* Join Request Dialog */}
+            <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Request to join class</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 py-2">
+                        <div>
+                            <label className="text-sm font-medium mb-2 block">Optional message to teacher</label>
+                            <Textarea
+                                placeholder="Why do you want to join this class?"
+                                value={joinMessage}
+                                onChange={(e) => setJoinMessage(e.target.value)}
+                                rows={3}
+                            />
+                        </div>
+                        <Button onClick={handleJoin} disabled={joiningClassId === joinDialogClassId}>
+                            {joiningClassId === joinDialogClassId ? (
+                                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</>
+                            ) : (
+                                <><Send className="h-4 w-4 mr-2" /> Send Request</>
+                            )}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
 		</ListView>
 	)

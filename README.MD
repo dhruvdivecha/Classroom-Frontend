@@ -5,6 +5,7 @@ A modern classroom management web application built with **React**, **Refine**, 
 <!-- Screenshots -->
 <p align="center">
   <img src="screenshots/dashboard-top.png" alt="Admin Dashboard — Stats, Enrollment Trends & Classes by Department" width="100%" />
+  <img src="screenshots/classes.png" alt="Classes List View" width="100%" />
 </p>
 
 

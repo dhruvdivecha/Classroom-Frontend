@@ -67,6 +67,7 @@ const Show = () => {
   const { data: identity } = useGetIdentity();
   const userRole = identity?.role || 'student';
   const userId = identity?.id;
+  const emailVerified = (identity as Record<string, unknown> | undefined)?.emailVerified === true;
 
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [joinRequestLoading, setJoinRequestLoading] = useState(false);
@@ -95,6 +96,9 @@ const Show = () => {
     resource: 'users',
     filters: [{ field: 'role', operator: 'eq', value: 'student' }],
     pagination: { pageSize: 200 },
+    queryOptions: {
+      enabled: userRole === 'admin' || userRole === 'teacher',
+    },
   });
   const students = studentsResult?.data ?? [];
   const enrolledIds = new Set(enrollments.map((e) => e.studentId));
@@ -249,7 +253,11 @@ const Show = () => {
         {userRole === 'student' && (
           <div>
             <h2 className="text-lg font-semibold mb-2">Join this class</h2>
-            {isEnrolled ? (
+            {!emailVerified ? (
+              <div className="p-4 bg-muted rounded-lg border">
+                <p className="text-muted-foreground font-medium">Your account is pending approval. Please wait for an admin to verify your account.</p>
+              </div>
+            ) : isEnrolled ? (
               <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                 <p className="text-green-800 dark:text-green-200 font-medium">You are enrolled in this class</p>
               </div>

@@ -73,7 +73,7 @@ export const authProvider: AuthProvider = {
     }
   },
   onError: async (error) => {
-    if (error?.status === 401 || error?.status === 403) {
+    if (error?.status === 401) {
       return {
         logout: true,
         redirectTo: '/login',
@@ -93,6 +93,7 @@ export const authProvider: AuthProvider = {
           email: user.email,
           avatar: user.image,
           role: ((user as Record<string, unknown>).role as User['role']) || 'student',
+          emailVerified: user.emailVerified ?? false,
         };
       }
       return null;
