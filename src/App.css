@@ -21,7 +21,7 @@
   --destructive: oklch(0.6188 0.2376 25.7658);
   --destructive-foreground: oklch(1.0000 0 0);
   --border: oklch(0.9317 0.0118 231.6594);
-  --input: oklch(0.9809 0.0025 228.7836);
+  --input: oklch(0.87 0.005 228.78);
   --ring: oklch(0.6818 0.1584 243.3540);
   --chart-1: oklch(0.6723 0.1606 244.9955);
   --chart-2: oklch(0.6907 0.1554 160.3454);
@@ -169,8 +169,20 @@
     @apply border-border outline-ring/50 antialiased;
     font-family: var(--font-sans);
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+}
+
+/* Mobile-friendly: allow horizontal scroll for tables only */
+@layer utilities {
+  .overflow-x-auto-touch {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
   }
 }
 

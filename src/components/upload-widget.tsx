@@ -14,7 +14,6 @@ function UploadWidget({
 
   const [preview, setPreview] = useState<UploadWidgetValue | null>(value);
   const [deleteToken, setDeleteToken] = useState<string | null>(null);
-  const [isRemoving, setIsRemoving] = useState(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -76,40 +75,11 @@ function UploadWidget({
     }
   };
 
-  const removeFromCloudinary = async () => {
+  const removeImage = () => {
     if (!preview) return;
-
-    setIsRemoving(true);
-
-    try {
-      if (!deleteToken) {
-        throw new Error("Missing delete token for Cloudinary");
-      }
-
-      const params = new URLSearchParams();
-      params.append("token", deleteToken);
-
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/delete_by_token`,
-        {
-          method: "POST",
-          body: params,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to remove image from Cloudinary");
-      }
-
-      setPreview(null);
-      setDeleteToken(null);
-      onChangeRef.current?.(null);
-    } catch (error) {
-      console.error("Failed to remove image from Cloudinary", error);
-      window.alert("Failed to remove image. Please try again.");
-    } finally {
-      setIsRemoving(false);
-    }
+    setPreview(null);
+    setDeleteToken(null);
+    onChangeRef.current?.(null);
   };
 
   return (
@@ -122,8 +92,8 @@ function UploadWidget({
             type="button"
             size="icon"
             variant="destructive"
-            onClick={removeFromCloudinary}
-            disabled={isRemoving || disabled}
+            onClick={removeImage}
+            disabled={disabled}
           >
             <Trash className="size-4" />
           </Button>

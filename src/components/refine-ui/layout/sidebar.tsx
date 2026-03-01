@@ -15,6 +15,7 @@ import {
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent as ShadcnSidebarContent,
+  SidebarFooter as ShadcnSidebarFooter,
   SidebarHeader as ShadcnSidebarHeader,
   SidebarRail as ShadcnSidebarRail,
   SidebarTrigger as ShadcnSidebarTrigger,
@@ -25,14 +26,38 @@ import {
   useLink,
   useMenu,
   useRefineOptions,
+  useCan,
+  useGetIdentity,
   type TreeMenuItem,
 } from "@refinedev/core";
-import { ChevronRight, ListIcon } from "lucide-react";
-import React from "react";
+import { ChevronRight, ListIcon, LogOutIcon, UserCircle } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useLogout } from "@refinedev/core";
+import { UserAvatar } from "@/components/refine-ui/layout/user-avatar";
+import { Separator } from "@/components/ui/separator";
+import { getPendingCount } from "@/lib/join-requests-api";
 
 export function Sidebar() {
   const { open } = useShadcnSidebar();
-  const { menuItems, selectedKey } = useMenu();
+  const { menuItems: allMenuItems, selectedKey } = useMenu();
+  const { data: identity } = useGetIdentity();
+  const userRole = identity?.role || 'student';
+
+  // Filter menu items based on role
+  const menuItems = React.useMemo(() => {
+    return allMenuItems.filter((item) => {
+      const resource = item.name;
+      if (userRole === 'student') {
+        // Students can't see users, departments, or my-classes
+        return resource !== 'users' && resource !== 'departments' && resource !== 'my-classes';
+      } else if (userRole === 'teacher') {
+        // Teachers can't see users, but can see my-classes
+        return resource !== 'users';
+      }
+      // Admin sees everything except my-classes (they see all classes)
+      return resource !== 'my-classes';
+    });
+  }, [allMenuItems, userRole]);
 
   return (
     <ShadcnSidebar collapsible="icon" className={cn("border-none")}>
@@ -63,7 +88,88 @@ export function Sidebar() {
           />
         ))}
       </ShadcnSidebarContent>
+      <SidebarUserFooter />
     </ShadcnSidebar>
+  );
+}
+
+function SidebarUserFooter() {
+  const { open } = useShadcnSidebar();
+  const Link = useLink();
+  const { data: identity } = useGetIdentity();
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
+
+  if (!identity) return null;
+
+  const displayName = identity.name || identity.email || "Account";
+
+  return (
+    <ShadcnSidebarFooter
+      className={cn(
+        "border-t border-sidebar-border pt-2 mt-auto",
+        open ? "px-3" : "px-1"
+      )}
+    >
+      <Separator className="mb-2" />
+      <div
+        className={cn(
+          "flex items-center gap-2 py-2",
+          !open && "justify-center"
+        )}
+      >
+        <UserAvatar />
+        {open && (
+          <div className="flex flex-1 min-w-0 flex-col">
+            <span className="text-sm font-medium truncate">{displayName}</span>
+            <span className="text-xs text-muted-foreground truncate">{identity.email}</span>
+          </div>
+        )}
+      </div>
+      {open && (
+        <div className="flex flex-col gap-1">
+          <Link
+            to="/profile"
+            className={cn(
+              "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              "transition-colors"
+            )}
+          >
+            <UserCircle className="h-4 w-4 shrink-0" />
+            Profile
+          </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+            )}
+            onClick={() => logout()}
+            disabled={isLoggingOut}
+          >
+            <LogOutIcon className="h-4 w-4 shrink-0" />
+            {isLoggingOut ? "Logging out..." : "Log out"}
+          </Button>
+        </div>
+      )}
+      {!open && (
+        <div className="flex flex-col items-center gap-1">
+          <Link to="/profile" className="rounded-md p-2 hover:bg-sidebar-accent" title="Profile">
+            <UserCircle className="h-4 w-4" />
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => logout()}
+            disabled={isLoggingOut}
+            title="Log out"
+          >
+            <LogOutIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </ShadcnSidebarFooter>
   );
 }
 
@@ -206,7 +312,35 @@ function SidebarItemDropdown({ item, selectedKey }: MenuItemProps) {
 function SidebarItemLink({ item, selectedKey }: MenuItemProps) {
   const isSelected = item.key === selectedKey;
 
-  return <SidebarButton item={item} isSelected={isSelected} asLink={true} />;
+  const badge = item.name === 'join-requests' ? <PendingRequestsBadge /> : undefined;
+
+  return <SidebarButton item={item} isSelected={isSelected} asLink={true} badge={badge} />;
+}
+
+function PendingRequestsBadge() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const c = await getPendingCount();
+        setCount(c);
+      } catch (e) {
+        console.error('Failed to load pending count:', e);
+      }
+    };
+    loadCount();
+    const interval = setInterval(loadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (count === 0) return null;
+
+  return (
+    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
 }
 
 function SidebarHeader() {
@@ -298,6 +432,7 @@ type SidebarButtonProps = React.ComponentProps<typeof Button> & {
   item: TreeMenuItem;
   isSelected?: boolean;
   rightIcon?: React.ReactNode;
+  badge?: React.ReactNode;
   asLink?: boolean;
   onClick?: () => void;
 };
@@ -306,6 +441,7 @@ function SidebarButton({
   item,
   isSelected = false,
   rightIcon,
+  badge,
   asLink = false,
   className,
   onClick,
@@ -330,6 +466,7 @@ function SidebarButton({
       >
         {getDisplayName(item)}
       </span>
+      {badge}
       {rightIcon}
     </>
   );

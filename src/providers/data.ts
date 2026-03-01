@@ -29,6 +29,16 @@ const buildhttpError = async (response: Response): Promise<HttpError> => {
 
 }
 const options: CreateDataProviderOptions = {
+  httpClient: async (url, options = {}) => {
+    return fetch(url, {
+      ...options,
+      credentials: 'include', // Include cookies for authentication
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+  },
   getList: {
     getEndpoint: (params) => params.resource,
 
@@ -44,15 +54,18 @@ const options: CreateDataProviderOptions = {
         const value = String(filter.value);
 
         if (resource === 'subjects'){
-          if (field === 'department') {
+          if (field === 'departmentId' || field === 'department') {
             params.department = value;
           }
-          if( field === 'name' || field === 'code') params.search = value;
+          if (field === 'name' || field === 'code') params.search = value;
         }
 
         if (resource === 'users'){
           if (field === 'role') {
             params.role = value;
+          }
+          if (field === 'emailVerified') {
+            params.emailVerified = value;
           }
           if( field === 'name' || field === 'email') params.search = value;
         }
@@ -67,6 +80,10 @@ const options: CreateDataProviderOptions = {
           if (field === 'name') {
             params.search = value;
           }
+        }
+
+        if (resource === 'departments') {
+          if (field === 'name' || field === 'code') params.search = value;
         }
       })
       return params;
@@ -91,8 +108,7 @@ const options: CreateDataProviderOptions = {
 
     mapResponse: async (response) => {
       const json: CreateResponse = await response.json();
-
-      return json.data ?? [];
+      return (json.data ?? {}) as Record<string, unknown>;
     }
   },
   getOne: {
@@ -105,7 +121,23 @@ const options: CreateDataProviderOptions = {
       const json: GetOneResponse = await response.json();
       return json.data ?? null;
     }
-  }
+  },
+  update: {
+    getEndpoint: ({ resource, id }) => `${resource}/${id}`,
+    buildBodyParams: ({ variables }) => variables,
+    mapResponse: async (response) => {
+      if (!response.ok) throw await buildhttpError(response);
+      const json: CreateResponse = await response.json();
+      return (json.data ?? {}) as Record<string, unknown>;
+    },
+  },
+  deleteOne: {
+    getEndpoint: ({ resource, id }) => `${resource}/${id}`,
+    mapResponse: async (response) => {
+      if (!response.ok) throw await buildhttpError(response);
+      return {} as Record<string, unknown>;
+    },
+  },
 };
 
 

@@ -44,6 +44,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     >
       <Sun
         className={cn(
+          "absolute",
           "h-[1.2rem]",
           "w-[1.2rem]",
           "rotate-0",
