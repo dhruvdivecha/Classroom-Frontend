@@ -81,7 +81,7 @@ export function DataTable<TData extends BaseRecord>({
   return (
     <div className={cn("flex", "flex-col", "flex-1", "gap-4", "min-w-0")}>
       <div ref={tableContainerRef} className={cn("rounded-md", "border", "overflow-x-auto", "overflow-x-auto-touch")}>
-        <Table ref={tableRef} style={{ tableLayout: "fixed", width: "100%" }}>
+        <Table ref={tableRef} style={{ tableLayout: "fixed", width: "100%", minWidth: `${leafColumns.reduce((sum, col) => sum + (col.getSize() || 150), 0)}px` }}>
           <TableHeader>
             {getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

@@ -29,6 +29,7 @@ export const Header = () => {
 
 function DesktopHeader() {
   const navigate = useNavigate();
+  const { open } = useSidebar();
   const [query, setQuery] = useState("");
 
   const handleGlobalSearch = (e: React.FormEvent) => {
@@ -61,6 +62,7 @@ function DesktopHeader() {
         "z-40"
       )}
     >
+      {!open && <SidebarTrigger className="text-muted-foreground shrink-0" />}
       <form onSubmit={handleGlobalSearch} className="flex flex-1 min-w-0 max-w-full sm:max-w-sm flex-wrap items-center gap-2">
         <Search className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
         <Input
