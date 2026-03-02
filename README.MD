@@ -130,7 +130,7 @@ A modern classroom management web application built with **React**, **Refine**, 
 ### Prerequisites
 
 - **Node.js** v18+
-- The [backend server](../classroom-backend) running locally (or deployed)
+- The [backend server](https://github.com/dhruvdivecha/classroom-backend) running locally (or deployed)
 - **Cloudinary** account (for image uploads)
 
 ### 1. Clone the repository
